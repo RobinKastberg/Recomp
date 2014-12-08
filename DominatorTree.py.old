@@ -1,0 +1,103 @@
+from Graph import Graph
+class DominatorTree(Graph):
+    def __init__(self, root=None):
+        Graph.__init__(self)
+        self.v = []
+        self.e = []
+        self.entry = root
+        vertex = {}
+        dom = {}
+        bucket = {}
+        for i, v in enumerate(root.dfs()): #A
+            vertex[i] = v
+            bucket[v] = []
+            self.v.append(v)
+            v._semi = i
+            v._ancestor = 0
+            v._label = v
+        for i in range(len(vertex)-1, 0, -1):
+            w = vertex[i]
+            for v in w.pres(): # Optimize by building in #A
+                u = self._EVAL(v)
+                if u._semi < w._semi:
+                    w._semi = u._semi
+            bucket[vertex[w._semi]].append(w)
+            self._LINK(w._dfs_parent, w)
+            for v in list(bucket[w._dfs_parent]):
+                bucket[w._dfs_parent].remove(v)
+                u = self._EVAL(v)
+                if u._semi < v._semi:
+                    dom[v] = u
+                else:
+                    dom[v] = w._dfs_parent
+        for i in range(1,len(vertex)-1):
+            w = vertex[i]
+            if dom[w] != vertex[w._semi]:
+                dom[w] = dom[dom[w]]
+        for v in dom:
+            self.add_edge(dom[v],v)
+    def __str__(self):
+        return "VERTICES: %s\nEDGES: %s" % (self.v, self.e)
+    def _EVAL(self, v):
+        if v._ancestor == 0:
+            return v
+        else:
+            self._COMPRESS(v)
+        return v._label
+    def _COMPRESS(self, v):
+        if v._ancestor._ancestor != 0:
+            self._COMPRESS(v._ancestor)
+            if v._ancestor._label._semi < v._label._semi:
+                v._label = v._ancestor._label
+            v._ancestor = v._ancestor._ancestor
+    def _LINK(self, v, w):
+        w._ancestor = v
+
+from Graph import Vertex
+def main():
+    g = Graph()
+    r = Vertex(g)
+    r._id = 'root'
+    A = Vertex(g)
+    A._id = 'A'
+    B = Vertex(g)
+    B._id = 'B'
+    C = Vertex(g)
+    C._id = 'C'
+    D = Vertex(g)
+    D._id = 'D'
+    E = Vertex(g)
+    E._id = 'E'
+    F = Vertex(g)
+    F._id = 'F'
+    G = Vertex(g)
+    G._id = 'G'
+    end = Vertex(g)
+    end._id = 'end'
+
+    g.add_edge(r, A)
+    g.add_edge(r, end)
+
+    g.add_edge(A, B)
+    g.add_edge(A, C)
+    g.add_edge(B, C)
+    g.add_edge(C, D)
+    g.add_edge(C, E)
+    g.add_edge(D, F)
+    g.add_edge(E, F)
+    g.add_edge(F, B)
+    g.add_edge(F, G)
+    g.add_edge(G, end)
+    dt = DominatorTree(r)
+    assert (r, end) in dt.e
+    assert (r, A) in dt.e
+    assert (A, B) in dt.e
+    assert (A, C) in dt.e
+    assert (A, C) in dt.e
+    assert (C, D) in dt.e
+    assert (C, E) in dt.e
+    assert (C, F) in dt.e
+    assert (F, G) in dt.e
+    g.entry = r
+if __name__ == '__main__':
+    main()

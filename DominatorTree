@@ -1,0 +1,52 @@
+class DominatorTree(Graph):
+    def __init__(self, root):
+        Graph.__init__(self)
+        self.v = []
+        self.e = []
+        vertex = {}
+        dom = {}
+        bucket = {}
+        for i, v in enumerate(root.dfs()): #A
+            vertex[i] = v
+            bucket[v] = []
+            self.v.append(v)
+            v._semi = i
+            v._ancestor = 0
+            v._label = v
+        for i in range(len(vertex)-1, 0, -1):
+            w = vertex[i]
+            for v in w.pres(): # Optimize by building in #A
+                u = self._EVAL(v)
+                if u._semi < w._semi:
+                    w._semi = u._semi
+            bucket[vertex[w._semi]].append(w)
+            self._LINK(w._dfs_parent, w)
+            for v in list(bucket[w._dfs_parent]):
+                bucket[w._dfs_parent].remove(v)
+                u = self._EVAL(v)
+                if u._semi < v._semi:
+                    dom[v] = u
+                else:
+                    dom[v] = w._dfs_parent
+        for i in range(1,len(vertex)-1):
+            w = vertex[i]
+            if dom[w] != vertex[w._semi]:
+                dom[w] = dom[dom[w]]
+        for v in dom:
+            self.add_edge(dom[v],v)
+    def __str__(self):
+        return "VERTICES: %s\nEDGES: %s" % (self.v, self.e)
+    def _EVAL(self, v):
+        if v._ancestor == 0:
+            return v
+        else:
+            self._COMPRESS(v)
+        return v._label
+    def _COMPRESS(self, v):
+        if v._ancestor._ancestor != 0:
+            self._COMPRESS(v._ancestor)
+            if v._ancestor._label._semi < v._label._semi:
+                v._label = v._ancestor._label
+            v._ancestor = v._ancestor._ancestor
+    def _LINK(self, v, w):
+        w._ancestor = v
